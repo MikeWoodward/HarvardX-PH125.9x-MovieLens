@@ -85,11 +85,11 @@ As required by the project instructions, this project uses the 10 million review
 
 The MovieLens data I used for this project consists of 10 million reviews. I found no missing (NA) fields. After initial cleaning and formatting, I partitioned this data into two groups using randomization (with a seed of 1):
 
-* edx - 90% of the data. This data was used for training and regularization. All of the results in the exploratory data analysis, model building and training, and regularizations section use this data *only*. 
+* edx - 90% of the data. This data was used for training and regularization. All of the results in the 'Exploratory data analysis', 'Model building and training', and 'Regularization' sections of this report use this data *only*. 
 
-* validation - 10% of the data. This is a hold out data set and was *only* used for the final model evaluation. The only section in this report that uses this data is the Results section.
+* validation - 10% of the data. This is a hold out data set and was *only* used for the final model evaluation. The only section in this report that uses this data is the 'Final results' section.
 
-For model development and testing, I partioned the edx group into two sub-groups (again using randomization and a seed of 1):
+For model development and testing, I partitioned the edx group into two sub-groups (again using randomization and a seed of 1):
 
 * train - 90% of the data - used for training algorithms.
 
@@ -109,7 +109,7 @@ edx_original_head %>%
   knitr::kable()
 ```
 
-Note the movie release year is coded into the title and is always the last part of the title. The timestamp field is the UNIX-formatted timestamp when the user submitted their movie review. The genres field contains multiple values separated by a '|' character. Although there are six fields here, the fact the movie title includes the release year suggests I should create a seventh field by extracting the release year from the movie title.
+Note the movie release year is coded into the title and is always the last part of the title. The timestamp field is the UNIX-formatted timestamp when the user submitted their movie review. The genres field contains multiple values separated by a '|' character. Although there are six fields in the data set, the fact the movie title includes the release year suggests I should create a seventh field by extracting the release year from the movie title.
 
 The movie ratings are the outcomes I want to predict, so I'll explore ratings first. Here are the sorted unique ratings: 
 
@@ -125,39 +125,37 @@ edx_summary %>%
   knitr::kable()
 ```
 
-There are a large number of users, movies, and ratings. This suggests the modeling computational burden will be high. The high average number of ratings per user and ratings per movie suggests I should look closely at the underlying distributions, there may be some structure relevant to modeling.
+There are a large number of users, movies, and ratings. This suggests the modeling computational burden will be high. The high average number of ratings per user and ratings per movie indicates I should look closely at the underlying distributions, there may be some structure relevant to modeling.
 
-The most obvious distribution is the number of reviews by rating, shown in Figure 1 (below).
+The most obvious distribution is the number of reviews by rating, shown in Figure 1 (below). The quantization and the upper and lower bounds are obvious, but it's also obvious that the distribution is *not* uniform, which suggests there are underlying factors that affect ratings. Note  the most common rating (mode) is 4 and that integer ratings are more common than half scores. I'll return to this topic in the 'Discussion and conclusions' section.
 
 ![Ratings histogram](data/edx_ratings_histogram.png)
 
 
-The quantization and the upper and lower bounds are obvious, but it's also obvious that the distribution is *not* uniform, which suggests there are underlying factors that affect ratings. Note  the most common rating (mode) is 4 and that integer ratings are more common than half scores. I'll return to this topic in the discussion section.
-
 I show distribution of mean ratings by movie in Figure 2. This suggests a very strong movie effect on ratings and so it's a feature I need to include in my model. The distribution appears to be left-skewed compared to a normal distribution.
 
-![Ratings histogram](data/edx_movies_histogram.png)
+![Movie ratings histogram](data/edx_movies_histogram.png)
 
-Figure 3 plots the user count vs mean rating. Again, there's a very strong user effect on rating and as a result, I need to include this feature in my model. Note that it's an approximately normal distribution and its shape is different from the movie effect, suggesting different dynamics are at work.
+Figure 3 plots the user count vs mean rating. Again, there's a very strong user effect on rating and as a result, I need to include this feature in my model. Note that it's an approximately normal distribution and its shape is different from the movie effect, suggesting movie and user effects have different dynamics.
 
-![Ratings histogram](data/edx_users_histogram.png)
+![User ratings histogram](data/edx_users_histogram.png)
 
 Genres are a little harder to analyze because a movie can have multiple genres associated with it. If we look just at individual genres, we find these genres:
 
 `r edx_unique_genres`
 
-However, they can be combined in several ways. In the edx data, there are `r edx_distinct_genre_combos` unique values for the genres field. As a first approximation, it seems reasonable that combined genres (e.g 'Action | Adventure') may behave differently from the individual genres (e.g. 'Action', 'Adventure'). I'm going to confine my analysis to combined genres, specifically, the contents of the genres column.
+However, they can be combined in several ways. In the edx data, there are `r edx_distinct_genre_combos` unique values for the genres field. As a first approximation, it seems reasonable that combined genres (e.g 'Action | Adventure') may behave differently from the individual genres (e.g. 'Action', 'Adventure'). For now, I'm going to confine my analysis to combined genres, specifically, the contents of the genres column.
 
 In Figure 4, I've plotted the mean rating and confidence interval for all genres that have more than 50,000 reviews. I've ordered the data by decreasing mean. Obviously, there's a strong genre effect with range of mean ratings from 4 to about 2.8
 
-![Ratings histogram - 50,000 ratings and more](data/edx_genres_ratings_micro.png)
+![Genres ratings histogram - 50,000 ratings and more](data/edx_genres_ratings_micro.png)
 
 
-This is just the top viewed movies, but what about movies with less than 50,000 reviews? There are `r edx_distinct_genre_combos` genres, which means I can't display the grenre names on the axis. With the full data set, there's a strong genres effect, but some genres have a wide confidence interval, which is something I'll come back to in the discussion.
+This is just the top viewed movies, but what about movies with less than 50,000 reviews? There are `r edx_distinct_genre_combos` genres, which means I can't display the genre names on the axis. As is obvious from Figure 5, with the full data set, there's a strong genres effect, but some genres have a wide confidence interval, which is something I'll come back to in the 'Discussion and conclusions' section.
 
 ![Ratings histogram - full genres set](data/edx_genres_ratings_macro.png)
 
-The movie release year is another possible feature. I extracted release year from the title and plotted the mean rating by year (with 95% confidencen interval) below (Figure 6). Ratings are dependent on release year, which is very clear after about 1970. Prior to 1970, the pattern is less obvious and I'll come back to this point in the discussion. For now, I'll add movie release year as another model feature.
+The movie release year is another possible feature. I extracted release year from the title and plotted the mean rating by year (with 95% confidencen interval) below (Figure 6). Ratings are dependent on release year, which is very clear after about 1970. Prior to 1970, the pattern is less obvious and I'll come back to this point in the 'Discussion and conclusion'. For now, I'll add movie release year as another model feature.
 
 ![Ratings mean and confidence interval by movie release year](data/edx_ratings_release_year.png)
 
@@ -172,7 +170,7 @@ Although the timestamp of the review showed little variation, it's possible that
 
 Note that there are a few cases where release_review (the year difference) is negative, suggesting the movie was reviewed before it was released. This does happen from time to time (a movie might be made available for early review in December but released to the public in January, and sometimes rough cuts are screened well before release to gauge audience reactions). For now, I'll leave these reviews in the data set. 
 
-The chart shows that, as expected, oldert movies have better reviews. I will include this feature in my model.
+The chart shows that, as expected, older movies have better reviews. I will include this feature in my model.
 
 My analysis has suggested the following model features:
 
@@ -216,7 +214,7 @@ where:
 
 * $f(rr_{u,i})$ - where $f$ is a smooth function of $rr_{u,i}$. This represents the mean rating for my feature release review. Again for brevity, I will label this term $b_{rr}$
 
-* $f(ry_{u,i})$ - where $f$ is a smooth function of $ry_{u,i}$. This represents the mean rating for the release year feature. Again for brevity, I will label this term $b_{ry}$
+* $f(ry_{u,i})$ - where $f$ is a smooth function of $ry_{u,i}$. This represents the mean rating for the release year feature. I will label this term $b_{ry}$
 
 Using linear modeling for a data set this large is computationally expensive, I can take a short cut. I can write our estimate of $b_i$ as: 
 
@@ -228,7 +226,7 @@ It's not just $b_i$ I can calculate in this way, I can similarly calculate the o
 
 \[\hat b_u = \frac{1}{N}\sum^N_{i=1} {Y_{u,i} - \hat \mu - \hat b_i}\]
 
-The code is a straightforward implementation of this algorithm, for example, here's my code to calculate the genres effect.
+My code is a straightforward implementation of this algorithm, for example, here's a code snippet to calculate the genres effect.
 
 ```{r, eval=FALSE, warning=FALSE, echo=TRUE}
 # Genres
@@ -245,7 +243,7 @@ predicted_ratings <- test %>%
   mutate(pred = mu + b_i + b_u + b_g) %>%
   pull(pred)
 rmse_genres = RMSE(test$rating, predicted_ratings)
-scores <- rbind(scores, c("Genres", rmse_genres))
+model_scores <- rbind(scores, c("Genres", rmse_genres))
 ```
 
 I'll use RMSE as my metric of success. RMSE is defined by the function $RMSE = \sqrt{\frac{1}{N}\sum_{u,i}{(\hat y_{u,i} - y_{u,i})^2}}$, where $N$ is the number of recommendations, $\hat y_{u,i}$ is the predicted rating and $y_{u,i}$ is the actual rating. This is the course mandated measure.
@@ -264,11 +262,13 @@ I modeled the data in five stages using the train data subset:
 
 * Mean, movie effects, user effects, and genre
 
-* Mean, movie effects, user effects, genre effects, and release review effects.
+* Mean, movie effects, user effects, genre, and release review effects.
 
-* Mean, movie effects, user effects, genre effects, release review, and release year effects.
+* Mean, movie effects, user effects, genre, release review, and release year effects.
 
-At each stage, I calculated the RMSE using the test subset of the edx data set. Here are the results.
+At each stage, I calculated the RMSE using the test subset of the edx data set. 
+
+Here are the RMSE result for each stage of the model building process.
 
 ```{r, echo=FALSE, warning=FALSE}
 # model_score table - results of each stage of the model
@@ -276,7 +276,7 @@ model_scores %>%
   knitr::kable()
 ```
 
-As expected, adding more features decreases RMSE, taking me below the course target of `r rmse_target` However, I may have overfitted the model. I need to regularize the model prior to the final analysis.
+As expected, adding more features decreases RMSE, taking me below the course target of `r rmse_target` However, I may have overfitted the model. To avoid overfitting, I need to regularize my model prior to the final analysis.
 
 ## Regularization
 
@@ -286,6 +286,8 @@ Regularization means choosing a penalty term to constrain effect size variabilit
 \sum_{u,i} \left(y_{u,i} - \mu - b_i - b_u - b_g - b_{rr} - b_{ry}\right)^2 + 
 \lambda \left(\sum_{i} b_i^2 + \sum_{u} b_u^2 + \sum_{g} b_g^2 + \sum_{rr} b_{rr}^2 + \sum_{ry} b_{ry}^2 \right)
 \]
+
+Regularization is computationally expensive; to find a minimum $\lambda$ means varying lambda to minimize RMSE. There are various computational methods to do this, for example, the well-known Newton-Raphson process, but for now, I'll vary the lambda step size manually, with smaller steps around the minima and fewer steps elsewhere.
 
 Here's a code snipped to show how I implemented the logic.
 
@@ -326,15 +328,13 @@ rmses_regularization <- sapply(lambdas, function(lambda) {
 })
 ```
 
-Regularization is computationally expensive; to find a minimum $\lambda$ means varying lambda to minimize RMSE. There are various computational methods to do this, for example, the well-known Newton-Raphson process, but for now, I'll vary the lambda step size manually, with smaller steps around the minima and fewer steps elsewhere.
-
 Figure 9 is a plot of RMSE vs lambda. The minimal lambda from the chart is `r lambda`.
 
 ![Regularization - minimizing RMSE](data/regularization_chart.png)
 
 # Final results
 
-The final stage is using the entire edx data to train the model and the validation (hold out) data to calculate the final RMSE. 
+The final stage is using the entire edx data to train the model, use the lambda value previoulsy obtained, and use the validation (hold out) data to calculate the final RMSE. 
 
 The final RMSE value I obtain is `r rmse_final`, which is less than the course target of `r rmse_target`.
 
@@ -344,27 +344,25 @@ A closer look at the final rating predictions shows there are ratings <0.5 and >
 
 Although the final results are better than the course target, further work could reduce the RMSE further.
 
-As I pointed out earlier, ratings are quantized and the number of half star ratings is less than the number of whole star ratings. It may be worth investigating whether different factors drive full and half star ratings, for example, some users may rate on full stars alone.logit!!!! k-means
+As I pointed out earlier, ratings are quantized and the number of half star ratings is less than the number of whole star ratings. It may be worth investigating whether different factors drive full and half star ratings, for example, some users may rate on full stars alone. This might be a case where k-means clustering could identify different clusters of reviewers.
 
-When modeling genres, I considered *all* genres for a movie. But there may be specific genre effects, for example "Comedy" movies might be more highly reviewed than 'Western' movies. There may well also be an interaction between genre and year, for example, there are fewer 'Western' movies produced now than there were in the 1940's.
+When modeling genres, I considered *all* genres for a movie. But there may be specific genre effects, for example "Comedy" movies might be more highly reviewed than 'Western' movies. There may well also be an interaction between genre and year, for example, there are fewer 'Western' movies produced now than there were in the 1940's. As chart 5 showed, there are some genres that showed high variability. A random forest approach may be useful here because of the branching logic.
 
-The release year chart (Figure 6) showed little variation before about 1970. A !!!!
+The release year chart (Figure 6) showed little variation before about 1970. Because of the conditional logic here, again because of the conditional logic a random forest approach might work well.
 
-SMOO?THIN?G
+My linear predictive model had a 'error noise' term $\epsilon$ with a mean of zero. This might not be the case, there may be a bias in the noise and of course there are other (non-normal) error models (see for example [Honda]). It might be worth considering error models that are biased in some way.
 
-k-means clutering
-
-Ramdom forect
-
-Ensemble
-
-factorization
+Although an ensemble model is attractive, in practice, the computational burden may be high for very large datasets. More generally, for a large-scale system, the computational cost must be borne in mind, which suggests we should favor computational cheaper algorithms as the way forward.
 
 # References
 
 [Aggarwal] Charu C. Aggarwal, Recommender Systems: The Textbook, Springer, 2016
 
 [Gomez-Uribe] Carlos A. Gomez-Uribe and Neil Hunt. 2016. The Netflix Recommender System: Algorithms, Business Value, and Innovation. ACM Trans. Manage. Inf. Syst. 6, 4, Article 13 (January 2016)
+
+[Honda] Testing the Error Components Model with Non-Normal Disturbances
+Yuzo Honda
+The Review of Economic Studies, Volume 52, Issue 4, October 1985, Pages 681–690
 
 [Jacobson] Kurt Jacobson, Vidhya Murali, Edward Newett, Brian Whitman, and Romain Yon. 2016. Music Personalization at Spotify. In Proceedings of the 10th ACM Conference on Recommender Systems (RecSys '16). Association for Computing Machinery, New York, NY, USA, 373
 
