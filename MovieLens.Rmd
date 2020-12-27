@@ -246,7 +246,7 @@ rmse_genres = RMSE(test$rating, predicted_ratings)
 model_scores <- rbind(scores, c("Genres", rmse_genres))
 ```
 
-I'll use RMSE as my metric of success. RMSE is defined by the function $RMSE = \sqrt{\frac{1}{N}\sum_{u,i}{(\hat y_{u,i} - y_{u,i})^2}}$, where $N$ is the number of recommendations, $\hat y_{u,i}$ is the predicted rating and $y_{u,i}$ is the actual rating. This is the course mandated measure.
+I'll use the loss function RMSE as my metric of success. RMSE is defined by the function $RMSE = \sqrt{\frac{1}{N}\sum_{u,i}{(\hat y_{u,i} - y_{u,i})^2}}$, where $N$ is the number of recommendations, $\hat y_{u,i}$ is the predicted rating and $y_{u,i}$ is the actual rating. This is the course mandated measure.
 
 If this approach is valid, we would expect to see the RMSE decrease as we build the model up from its components parts.
 
