@@ -1,7 +1,7 @@
 ---
 title: "MovieLens recommender system project for course PH125.9x"
 author: "Mike Woodward"
-date: "2020-12-24"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 output: 
   pdf_document:
     toc: true
@@ -186,9 +186,7 @@ My analysis has suggested the following model features:
 
 My analysis also suggests that review timestamp, on its own, will not explain much ratings variation.
 
-## Model building and training
-
-### Theory
+## Model building and training - theory
 
 Investigating appropriate modeling approaches takes time. With a large data set and limited computational resources (no cloud cluster for example), I need to select a relatively straightforward model and work to reduce the computation time. I therefore chose a linear model and took advantage of some computational short-cuts.
 
@@ -250,7 +248,7 @@ I'll use the loss function RMSE as my metric of success. RMSE is defined by the 
 
 If this approach is valid, we would expect to see the RMSE decrease as we build the model up from its components parts.
 
-### Modeling results
+# Modeling results
 
 I modeled the data in five stages using the train data subset:
 
@@ -278,7 +276,7 @@ model_scores %>%
 
 As expected, adding more features decreases RMSE, taking me below the course target of `r rmse_target` However, I may have overfitted the model. To avoid overfitting, I need to regularize my model prior to the final analysis.
 
-## Regularization
+# Regularization
 
 Regularization means choosing a penalty term to constrain effect size variability. My penalty term is $\lambda$ and I select it by minimizing this function using cross validation:
 

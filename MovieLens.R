@@ -31,7 +31,7 @@
 # Clears out the r workspace each time this file is run. 
 rm(list=ls())
 # Clears graphics settings
-dev.off()
+while (!is.null(dev.list())) dev.off()
 
 # Start the clock to time the script execution
 ptm <- proc.time()
