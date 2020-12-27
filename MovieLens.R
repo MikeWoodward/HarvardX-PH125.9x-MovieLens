@@ -193,8 +193,8 @@ print(edx_unique_ratings)
 edx_summary <-edx %>% summarize(no_users = n_distinct(userId), 
     no_movies = n_distinct(movieId), 
     no_ratings = n(),
-    avg_rate_user = no_ratings/no_users,
-    avg_rate_movie = no_ratings/no_movies)
+    mean_rate_user = no_ratings/no_users,
+    mean_rate_movie = no_ratings/no_movies)
 print(edx_summary)
 # Observations:
 # 1. 69878 users, 10677 movies - more users than movies
@@ -218,12 +218,12 @@ print(edx_rating_histogram)
 # Mean ratings by movie
 edx_movies_histogram <- edx %>% 
   group_by(movieId) %>%
-  summarize(avg_rating=mean(rating), .groups='keep') %>%
-  ggplot(aes(avg_rating)) + 
+  summarize(mean_rating=mean(rating), .groups='keep') %>%
+  ggplot(aes(mean_rating)) + 
   geom_histogram(bins=30, color="darkblue", fill="lightblue") + 
-  ggtitle("edx count of movies vs. avg ratings") +
+  ggtitle("edx count of movies vs. mean ratings") +
   ylab("count of movies") +
-  xlab("avg ratings")
+  xlab("mean ratings")
 print(edx_movies_histogram)
 # Observations
 # 1. Strong movie effect
@@ -232,12 +232,12 @@ print(edx_movies_histogram)
 # Mean ratings by user
 edx_users_histogram <- edx %>% 
   group_by(userId) %>%
-  summarize(avg_rating=mean(rating), .groups='keep') %>%
-  ggplot(aes(avg_rating)) + 
+  summarize(mean_rating=mean(rating), .groups='keep') %>%
+  ggplot(aes(mean_rating)) + 
   geom_histogram(bins=30, color="darkblue", fill="lightblue") + 
-  ggtitle("edx count of users vs. avg ratings") +
+  ggtitle("edx count of users vs. mean ratings") +
   ylab("count of users") +
-  xlab("avg ratings")
+  xlab("mean ratings")
 print(edx_users_histogram)
 # Observations:
 # 1. Strong user effect
@@ -254,38 +254,38 @@ print(edx_distinct_genre_combos)
 edx_genres_ratings_micro <- edx %>% 
   group_by(genres) %>% 
   summarize(n_ratings = n(),
-            avg_rating = mean(rating),
+            mean_rating = mean(rating),
             se = sd(rating)/sqrt(n()),
             .groups="keep") %>%
   filter(n_ratings >= 50000) %>%
-  ggplot(aes(x=reorder(genres, -avg_rating), 
-             y=avg_rating, 
-             ymin = avg_rating - 1.96*se, 
-             ymax = avg_rating + 1.96*se)) +
+  ggplot(aes(x=reorder(genres, -mean_rating), 
+             y=mean_rating, 
+             ymin = mean_rating - 1.96*se, 
+             ymax = mean_rating + 1.96*se)) +
     geom_point(color='blue') + 
     geom_errorbar(color='blue') + 
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
     ggtitle("edx average rating vs. genre") +
-    ylab("avg rating") +
+    ylab("mean rating") +
     xlab("genre")
 print(edx_genres_ratings_micro)
 edx_genres_ratings_macro <- edx %>% 
   group_by(genres) %>% 
   summarize(n_ratings = n(),
-            avg_rating = mean(rating),
+            mean_rating = mean(rating),
             se = sd(rating)/sqrt(n()),
             .groups="keep") %>%
-  ggplot(aes(x=reorder(genres, -avg_rating), 
-             y=avg_rating, 
-             ymin = avg_rating - 1.96*se, 
-             ymax = avg_rating + 1.96*se)) +
+  ggplot(aes(x=reorder(genres, -mean_rating), 
+             y=mean_rating, 
+             ymin = mean_rating - 1.96*se, 
+             ymax = mean_rating + 1.96*se)) +
   geom_point(color='blue') + 
   geom_errorbar(color='blue') +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
         axis.line = element_line(),) +
   ggtitle("edx average rating vs. genre") +
-  ylab("avg rating") +
+  ylab("mean rating") +
   xlab("genre")
 print(edx_genres_ratings_macro)
 # Observations
@@ -295,17 +295,17 @@ print(edx_genres_ratings_macro)
 # Mean ratings by release_year. 1.96 gives us the 95% confidence interval.
 edx_ratings_release_year <- edx %>% 
   group_by(release_year) %>%
-  summarize(avg_rating=mean(rating), 
+  summarize(mean_rating=mean(rating), 
             se = sd(rating)/sqrt(n()),
             .groups='keep') %>%
   ggplot(aes(x=release_year, 
-             y=avg_rating,
-             ymin = avg_rating - 1.96*se, 
-             ymax = avg_rating + 1.96*se)) + 
+             y=mean_rating,
+             ymin = mean_rating - 1.96*se, 
+             ymax = mean_rating + 1.96*se)) + 
   geom_point(color='blue') +
   geom_errorbar(color='blue') +
   ggtitle("edx average rating vs. release year") +
-  ylab("avg rating") +
+  ylab("mean rating") +
   xlab("year")
 print(edx_ratings_release_year)
 # Observations:
@@ -317,18 +317,18 @@ print(edx_ratings_release_year)
 # Mean rating by review week
 edx_ratings_review_week <- edx %>% 
   group_by(review_week) %>%
-  summarize(avg_rating=mean(rating), 
+  summarize(mean_rating=mean(rating), 
             se = sd(rating)/sqrt(n()),
             .groups='keep') %>%
   ggplot(aes(x=review_week, 
-             y=avg_rating,
-             ymin = avg_rating - 1.96*se, 
-             ymax = avg_rating + 1.96*se)) + 
+             y=mean_rating,
+             ymin = mean_rating - 1.96*se, 
+             ymax = mean_rating + 1.96*se)) + 
   geom_point(color='blue') +
   geom_errorbar(color='blue') +
   ylim(3, 4.75) +
-  ggtitle("edx count of review week vs. avg ratings") +
-  ylab("avg rating") +
+  ggtitle("edx count of review week vs. mean ratings") +
+  ylab("mean rating") +
   xlab("year")
 print(edx_ratings_review_week)
 # Observations
@@ -338,17 +338,17 @@ print(edx_ratings_review_week)
 # Mean rating by review_release
 edx_ratings_review_release <- edx %>% 
   group_by(review_release) %>%
-  summarize(avg_rating=mean(rating), 
+  summarize(mean_rating=mean(rating), 
             se = sd(rating)/sqrt(n()),
             .groups='keep') %>%
   ggplot(aes(x=review_release, 
-             y=avg_rating,
-             ymin = avg_rating - 1.96*se, 
-             ymax = avg_rating + 1.96*se)) + 
+             y=mean_rating,
+             ymin = mean_rating - 1.96*se, 
+             ymax = mean_rating + 1.96*se)) + 
   geom_point(color='blue') +
   geom_errorbar() +
-  ggtitle("edx avg rating vs year difference") +
-  ylab("avg rating") +
+  ggtitle("edx mean rating vs year difference") +
+  ylab("mean rating") +
   xlab("year difference")
 print(edx_ratings_review_release)
 
@@ -669,4 +669,3 @@ print(paste("Script duration was", script_duration))
 # Save final results
 save(rmse_target, rmse_final, rmse_clipped, script_duration, 
      file=file.path(data_folder, "movielens_evaluation.rda"))
-

@@ -350,7 +350,7 @@ The release year chart (Figure 6) showed little variation before about 1970. Bec
 
 My linear predictive model had a 'error noise' term $\epsilon$ with a mean of zero. This might not be the case, there may be a bias in the noise and of course there are other (non-normal) error models (see for example [Honda]). It might be worth considering error models that are biased in some way.
 
-Although an ensemble model is attractive, in practice, the computational burden may be high for very large datasets. More generally, for a large-scale system, the computational cost must be borne in mind, which suggests we should favor computational cheaper algorithms as the way forward.
+Although an ensemble model is attractive, in practice the computational burden may be too high for very large datasets. More generally, for a large-scale system, the computational cost must be borne in mind, which suggests we should favor computational cheaper algorithms as the way forward.
 
 # References
 
