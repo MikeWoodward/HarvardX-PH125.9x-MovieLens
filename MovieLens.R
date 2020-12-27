@@ -39,9 +39,9 @@ ptm <- proc.time()
 # Creates data folder if not already present, empties it otherwise
 data_folder = 'data'
 if (!dir.exists(data_folder)) {
-  dir.create('data')
+  dir.create(data_folder)
 } else {
-  f <- list.files('data', 
+  f <- list.files(data_folder, 
                   include.dirs = FALSE, full.names = TRUE, recursive = TRUE)
   file.remove(f)
   rm(f)
@@ -353,21 +353,27 @@ edx_ratings_review_release <- edx %>%
 print(edx_ratings_review_release)
 
 ## Save plots and data
-ggsave(filename=paste(data_folder, "edx_ratings_histogram.png", sep='/'), 
+ggsave(filename=file.path(data_folder, "edx_ratings_histogram.png"), 
+       width=6, height=3, units='in',
        plot=edx_rating_histogram)
-ggsave(filename=paste(data_folder, "edx_movies_histogram.png", sep='/'), 
+ggsave(filename=file.path(data_folder, "edx_movies_histogram.png"), 
+       width=6, height=3, units='in',
        plot=edx_movies_histogram)
-ggsave(filename=paste(data_folder, "edx_users_histogram.png", sep='/'), 
+ggsave(filename=file.path(data_folder, "edx_users_histogram.png"), 
+       width=6, height=3, units='in',
        plot=edx_users_histogram)
-ggsave(paste(data_folder, "edx_genres_ratings_macro.png", sep='/'), 
+ggsave(filename=file.path(data_folder, "edx_genres_ratings_macro.png"), 
+       width=6, height=3, units='in',
        plot=edx_genres_ratings_macro)
-ggsave(filename=paste(data_folder, "edx_genres_ratings_micro.png", sep='/'), 
+ggsave(filename=file.path(data_folder, "edx_genres_ratings_micro.png"),
+       width=6, height=3, units='in',
        plot=edx_genres_ratings_micro)
-ggsave(filename=paste(data_folder, "edx_ratings_release_year.png", sep='/'), 
+ggsave(filename=file.path(data_folder, "edx_ratings_release_year.png"), 
        plot=edx_ratings_release_year)
-ggsave(filename=paste(data_folder, "edx_ratings_review_week.png", sep='/'), 
+ggsave(filename=file.path(data_folder, "edx_ratings_review_week.png"), 
        plot=edx_ratings_review_week)
-ggsave(filename=paste(data_folder, "edx_ratings_review_release.png", sep='/'), 
+ggsave(filename=file.path(data_folder, "edx_ratings_review_release.png"), 
+       width=6, height=3, units='in',
        plot=edx_ratings_review_release)
 
 # These are all variables I'll be using in the Rmd file.
@@ -376,7 +382,7 @@ save(edx_original_head,
      edx_summary,
      edx_unique_genres,
      edx_distinct_genre_combos,
-     file=paste(data_folder, 'movielens_exploration.rda', sep='/'))
+     file=file.path(data_folder, 'movielens_exploration.rda'))
 
 # To preserve memory, remove variables not needed
 rm(edx_original_head,
@@ -571,9 +577,10 @@ lambda <- regularization[idx,1]
 
 # Save key analysis
 save(model_scores, lambda, 
-     file=paste(data_folder, "movielens_analysis.rda", sep='/'))
+     file=file.path(data_folder, "movielens_analysis.rda"))
 
-ggsave(filename=paste(data_folder, "regularization_chart.png", sep='/'), 
+ggsave(filename=file.path(data_folder, "regularization_chart.png"), 
+       width=6, height=3, units='in',
        plot=regularization_chart)
 
 # Final model evaluation
@@ -661,5 +668,5 @@ print(paste("Script duration was", script_duration))
 
 # Save final results
 save(rmse_target, rmse_final, rmse_clipped, script_duration, 
-     file=paste(data_folder, "movielens_evaluation.rda",  sep='/'))
+     file=file.path(data_folder, "movielens_evaluation.rda"))
 
