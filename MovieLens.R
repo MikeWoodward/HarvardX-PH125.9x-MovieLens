@@ -208,7 +208,8 @@ print(edx_summary)
 edx_rating_histogram <- edx %>% ggplot(aes(rating)) + 
   geom_histogram(binwidth=0.5, color="darkblue", fill="lightblue") + 
   ggtitle("edx ratings histogram") + 
-  ylab("count of ratings")
+  ylab("count of ratings") +
+  theme(aspect.ratio=0.5)
 print(edx_rating_histogram)
 # Observations:
 # 1. Half star ratings less common than full star ratings
@@ -223,7 +224,8 @@ edx_movies_histogram <- edx %>%
   geom_histogram(bins=30, color="darkblue", fill="lightblue") + 
   ggtitle("edx count of movies vs. mean ratings") +
   ylab("count of movies") +
-  xlab("mean ratings")
+  xlab("mean ratings") +
+  theme(aspect.ratio=0.5)
 print(edx_movies_histogram)
 # Observations
 # 1. Strong movie effect
@@ -237,7 +239,8 @@ edx_users_histogram <- edx %>%
   geom_histogram(bins=30, color="darkblue", fill="lightblue") + 
   ggtitle("edx count of users vs. mean ratings") +
   ylab("count of users") +
-  xlab("mean ratings")
+  xlab("mean ratings") +
+  theme(aspect.ratio=0.5)
 print(edx_users_histogram)
 # Observations:
 # 1. Strong user effect
@@ -264,7 +267,8 @@ edx_genres_ratings_micro <- edx %>%
              ymax = mean_rating + 1.96*se)) +
     geom_point(color='blue') + 
     geom_errorbar(color='blue') + 
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+          aspect.ratio=0.4) +
     ggtitle("edx average rating vs. genre") +
     ylab("mean rating") +
     xlab("genre")
@@ -283,7 +287,8 @@ edx_genres_ratings_macro <- edx %>%
   geom_errorbar(color='blue') +
   theme(axis.text.x = element_blank(),
         axis.ticks.x = element_blank(),
-        axis.line = element_line(),) +
+        axis.line = element_line(),
+        aspect.ratio=0.5) +
   ggtitle("edx average rating vs. genre") +
   ylab("mean rating") +
   xlab("genre")
@@ -306,7 +311,8 @@ edx_ratings_release_year <- edx %>%
   geom_errorbar(color='blue') +
   ggtitle("edx average rating vs. release year") +
   ylab("mean rating") +
-  xlab("year")
+  xlab("year") +
+  theme(aspect.ratio=0.5)
 print(edx_ratings_release_year)
 # Observations:
 # 1. Not as big an effect as user, movie, and genre, but none the less,
@@ -329,7 +335,8 @@ edx_ratings_review_week <- edx %>%
   ylim(3, 4.75) +
   ggtitle("edx count of review week vs. mean ratings") +
   ylab("mean rating") +
-  xlab("year")
+  xlab("year") +
+  theme(aspect.ratio=0.5)
 print(edx_ratings_review_week)
 # Observations
 # 1. Small effect, range of about 3.4 to 3.6, excluding outliers.
@@ -349,7 +356,8 @@ edx_ratings_review_release <- edx %>%
   geom_errorbar() +
   ggtitle("edx mean rating vs year difference") +
   ylab("mean rating") +
-  xlab("year difference")
+  xlab("year difference") +
+  theme(aspect.ratio=0.5)
 print(edx_ratings_review_release)
 
 ## Save plots and data
@@ -366,11 +374,13 @@ ggsave(filename=file.path(data_folder, "edx_genres_ratings_macro.png"),
        width=6, height=3, units='in',
        plot=edx_genres_ratings_macro)
 ggsave(filename=file.path(data_folder, "edx_genres_ratings_micro.png"),
-       width=6, height=3, units='in',
+       width=6, height=4, units='in',
        plot=edx_genres_ratings_micro)
 ggsave(filename=file.path(data_folder, "edx_ratings_release_year.png"), 
+       width=6, height=3, units='in',
        plot=edx_ratings_release_year)
 ggsave(filename=file.path(data_folder, "edx_ratings_review_week.png"), 
+       width=6, height=3, units='in',
        plot=edx_ratings_review_week)
 ggsave(filename=file.path(data_folder, "edx_ratings_review_release.png"), 
        width=6, height=3, units='in',
@@ -568,7 +578,8 @@ regularization <- data.frame(lambda = lambdas,
 # Plot regularization chart
 regularization_chart <- regularization %>% ggplot(aes(x=lambda, y=rmse)) + 
   geom_point(color='blue') +
-  ggtitle("Regularization. rmse vs lambda")
+  ggtitle("Regularization. rmse vs lambda") +
+  theme(aspect.ratio=0.5)
 print(regularization_chart)
 
 # Find lambda minima
@@ -662,10 +673,14 @@ sprintf("Clipped RMSE is %f", rmse_clipped)
 
 # Script duration
 script_duration <- as.numeric((proc.time() - ptm)['elapsed'])
-td <- seconds_to_period(script_duration)
-script_duration <- sprintf('%d minutes %.1f seconds', minute(td), second(td))
+script_duration <- sprintf('%d minutes %.1f seconds', 
+                           script_duration%/%60, 
+                           script_duration%%60)
 print(paste("Script duration was", script_duration))
 
 # Save final results
 save(rmse_target, rmse_final, rmse_clipped, script_duration, 
      file=file.path(data_folder, "movielens_evaluation.rda"))
+
+print("End of script")
+
