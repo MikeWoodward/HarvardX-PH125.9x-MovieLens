@@ -60,7 +60,7 @@ library(caret)
 library(data.table)
 library(lubridate)
 
-# Calculates RMSE.  
+# Function to calculate RMSE.  
 RMSE <- function(true_ratings, predicted_ratings){
   sqrt(mean((true_ratings - predicted_ratings)^2))
 }
@@ -87,7 +87,7 @@ movies <- as.data.frame(movies) %>% mutate(movieId = as.numeric(movieId),
 movielens <- left_join(ratings, movies, by = "movieId")
 
 # Add columns needed for exploration and analysis
-# release_year is the year of release
+# release_year is the year the movie was released
 movielens <- movielens %>% mutate(
   release_year = as.numeric(
     str_extract(str_extract(title, "[/(]\\d{4}[/)]$"), regex("\\d{4}"))),
@@ -111,7 +111,7 @@ validation <- temp %>%
 removed <- anti_join(temp, validation)
 edx <- rbind(edx, removed)
 
-# Remove unnecessary variable to keep memory overhead down
+# Remove unnecessary variables to keep memory overhead down
 rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
 # Create train and test set for machine learning
@@ -173,14 +173,14 @@ print("==============")
 
 # Quick views of data
 # -------------------
-# Quick look at the top of data, using only the origional fields and not the 
+# Quick look at the top of data, using only the original fields and not the 
 # ones I added
 edx_original_head <- head(edx %>% 
   select(userId, movieId, timestamp, title, genres, rating))
 print(edx_original_head)
 # Observations:
 # 1. Release year coded into title
-# 2. Timestamp is Unix coded timestamp of review
+# 2. timestamp is Unix coded timestamp of review
 # 3. genres field has multiple values separated by a |
 
 # View rating values
@@ -246,14 +246,18 @@ print(edx_users_histogram)
 # 1. Strong user effect
 # 2. Distribution appears to be roughly normal
 
-# Individual genres
+# Individual genres. 
+# Gets alphabetically sorted list of the individual genres present in the
+# genres field...
 edx_unique_genres <- sort(unique(
   unlist(strsplit(paste(unique(edx$genres), collapse="|"), "\\|"))))
 print(edx_unique_genres)
+# Counts the number of distinct genre combinations in the genre field 
 edx_distinct_genre_combos <- n_distinct(edx$genres)
 print(edx_distinct_genre_combos)
 
 # Mean ratings by genre. Error bar is 1.96*se: the 95% confidence interval.
+# Show all genres with mnore than 50,000 ratings
 edx_genres_ratings_micro <- edx %>% 
   group_by(genres) %>% 
   summarize(n_ratings = n(),
@@ -273,6 +277,8 @@ edx_genres_ratings_micro <- edx %>%
     ylab("mean rating") +
     xlab("genre")
 print(edx_genres_ratings_micro)
+# Show all ratings, but suppress labeling of genre axis because it will be
+# too cluttered to read.
 edx_genres_ratings_macro <- edx %>% 
   group_by(genres) %>% 
   summarize(n_ratings = n(),
@@ -448,7 +454,7 @@ predicted_ratings <- test %>%
 rmse_user <- RMSE(test$rating, predicted_ratings)
 model_scores <- rbind(model_scores, c("User effects", rmse_user))
 
-# Genres
+# Adding genres
 b_g <- train %>% 
   left_join(b_i, by='movieId') %>%
   left_join(b_u, by='userId') %>%
@@ -482,7 +488,7 @@ predicted_ratings <- test %>%
 rmse_releasereview = RMSE(test$rating, predicted_ratings)
 model_scores<-rbind(model_scores, c("Release review", rmse_releasereview))
 
-# Release year
+# Add release year
 b_ry <- train %>% 
   left_join(b_i, by='movieId') %>%
   left_join(b_u, by='userId') %>%
@@ -502,6 +508,7 @@ predicted_ratings <- test %>%
 rmse_releaseyear = RMSE(test$rating, predicted_ratings)
 model_scores <-rbind(model_scores, c("Release year", rmse_releaseyear))
 
+# Show the model RMSE scores for each stage in the model creation
 print(model_scores)
 
 # Regularization
@@ -513,7 +520,7 @@ lambdas <- sort(c(seq(0,     0.1, 0.1),
                   seq(0.62,  0.8, 0.2),
                   seq(0.825, 4,   0.25)))
 
-# Function to apply lambdas to regularization
+# Applies lambda to function that calculates RMSE for each lambda.
 rmses_regularization <- sapply(lambdas, function(lambda) {
   
   mu <- mean(train$rating)
@@ -571,7 +578,7 @@ rmses_regularization <- sapply(lambdas, function(lambda) {
   RMSE(test$rating, predicted_ratings)
 })
 
-# Convert to data frame for easier handling
+# Convert lambda data to data frame for easier handling
 regularization <- data.frame(lambda = lambdas, 
                              rmse = rmses_regularization)
 
@@ -602,6 +609,9 @@ print("===================")
 
 # Training on on whole edx data set
 # ---------------------------------
+# This is the last step before final evaluation. I'm training my model on the
+# entire edx data set using all the existing features developed using test and
+# train.
 mu <- mean(edx$rating)
 
 # Adding movie effects
@@ -658,7 +668,9 @@ predicted_ratings <- validation %>%
 # Final evaluation
 # ----------------
 # Note this is the only place in the code where the validation data is used
+# Target RMSE from course.
 rmse_target <- 0.86490
+# Final model valuation
 rmse_final <- RMSE(validation$rating, predicted_ratings)
 print(sprintf("Final RMSE is %f", rmse_final))
 print(ifelse(rmse_final < rmse_target, 
@@ -666,6 +678,8 @@ print(ifelse(rmse_final < rmse_target,
              "worse than required by project"))
 
 # Clipping
+# Ratings can go from 0.5 to 5, clipping 'clips' predicted ratings to a 
+# max of 5 and a minimum of 0.5.
 predicted_ratings <- ifelse(predicted_ratings > 5, 5, predicted_ratings)
 predicted_ratings <- ifelse(predicted_ratings < 0.5, 0.5, predicted_ratings)
 rmse_clipped <- RMSE(validation$rating, predicted_ratings)
