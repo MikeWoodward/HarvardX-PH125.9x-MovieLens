@@ -9,10 +9,10 @@
 # 4. Model building. Test the contributions to the model using the training
 #    and test subsets of the edx variable.
 # 5. Regularization.
-# 6. Final model evaluation. This is the *only* place where the validation data
-#    is used.
+# 6. Final model evaluation. This is the *only* place where the validation
+#    (holdout) data is used.
 # The rubric asked for RMSE calculations. In this code, all RMSE variables
-# is prefixed by rmse_.
+# are prefixed by rmse_.
 # The script is memory hungry, to reduce memory footprint, I remove
 # unnecessary variables in the code. 
 # On my modern, high-spec Mac Book Pro computer (multiple cores, fast processor, 
