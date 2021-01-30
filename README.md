@@ -1,5 +1,5 @@
 # HarvardX-PH125.9x-MovieLens
-Repository for course capstone project. This is for the MovieLens project.
+Repository for the course capstone project. This is for the MovieLens project.
 
 The key files here are:
 
