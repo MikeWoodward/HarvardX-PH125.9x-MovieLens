@@ -510,6 +510,12 @@ predicted_ratings <- test %>%
   pull(pred)
 rmse_releaseyear = RMSE(test$rating, predicted_ratings)
 model_scores <-rbind(model_scores, c("Release year", rmse_releaseyear))
+# rmse column is character string when it should be numeric
+model_scores[,'rmse'] <- as.numeric(model_scores[,'rmse'])
+# Calculate a % difference from previous entry
+model_scores['% change from previous'] <- 
+  100*(lag(model_scores['rmse']) - 
+       model_scores['rmse'])/lag(model_scores['rmse'])
 
 # Show the model RMSE scores for each stage in the model creation
 print(model_scores)

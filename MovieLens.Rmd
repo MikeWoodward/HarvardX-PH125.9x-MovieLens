@@ -31,7 +31,7 @@ PH125.9X Capstone course (Spring 2021). It explains how I built a recommender sy
 predict the ratings users gave to movies in the MovieLens data set.
 
 The goal of the project was an RMSE (root mean square error) of less than 
-`r rmse_target`. The final RMSE I achieved was `r rmse_final`, with clipping reducing the RMSE still further to `r rmse_clipped`.
+`r rmse_target`. The final RMSE I achieved was `r rmse_final` (lower than target), with clipping reducing the RMSE still further to `r rmse_clipped`.
 
 This is a large data set, so the computational burden is high. To find a
 reasonable result with available computing resources, I used a linear
@@ -81,9 +81,11 @@ As required by the project instructions, this project uses the 10 million review
 
 # Methods and analysis
 
-## Test, train, and holdout data 
+## Data cleaning, test, train, and holdout data 
 
-The MovieLens data I used for this project consists of 10 million reviews. I found no missing (NA) fields. After initial cleaning and formatting, I partitioned this data into two groups using randomization (with a seed of 1):
+The MovieLens data I used for this project consists of 10 million reviews. I found no missing (NA) fields. I added data quality checks on users, movies, and genres to ensure consistency between runs. I added several new fields to the data when it was loaded, including review week, release year, and release review. I'll describe these fields later in this report.
+
+I partitioned the loaded data into two groups using randomization (with a seed of 1):
 
 * edx - 90% of the data. This data was used for training and regularization. *All* of the results in the 'Exploratory data analysis', 'Model building and training', and 'Regularization' sections of this report use this data *only*. 
 
@@ -127,7 +129,7 @@ edx_summary %>%
 
 The summary shows there are a large number of users, movies, and ratings. This suggests the modeling computational burden will be high. The high average number of ratings per user and ratings per movie indicates I should look closely at the underlying distributions because there may be some structure relevant to modeling.
 
-The most obvious distribution is the number of reviews by rating, shown in Figure 1 (below). The quantization and the upper and lower bounds are obvious, but it's also obvious that the distribution is *not* uniform, which suggests there are underlying factors that affect ratings. Note  the most common rating (mode) is 4 and that integer ratings are more common than half scores. I'll return to this topic in the 'Discussion and conclusions' section.
+The most obvious distribution is the number of reviews by rating, shown in Figure 1 (below). The quantization and the upper and lower bounds are obvious, but it's also obvious that the distribution is *not* uniform, which suggests there are underlying factors that affect ratings. Note  the most common rating (mode) is 4 and that integer ratings are more common than half scores. I'll return to this topic in the 'Conclusion' section.
 
 ![Ratings histogram](data/edx_ratings_histogram.png)
 
@@ -135,7 +137,7 @@ I show distribution of mean ratings by movie in Figure 2. This suggests a very s
 
 ![Movie ratings histogram](data/edx_movies_histogram.png)
 
-Figure 3 plots the user count vs mean rating. Again, there's a very strong user effect on rating and as a result, I need to include it in my model. Note that it's an approximately normal distribution and its shape is different from the movie effect, suggesting movie and user effects have different dynamics.
+Figure 3 plots the user count vs. mean rating. Again, there's a very strong user effect on rating and as a result, I need to include it in my model. Note that it's an approximately normal distribution and its shape is different from the movie effect, suggesting movie and user effects have different dynamics.
 
 ![User ratings histogram](data/edx_users_histogram.png)
 
@@ -149,11 +151,11 @@ In Figure 4, I've plotted the mean rating and 95% confidence interval for all ge
 
 ![Genres ratings histogram - 50,000 ratings and more](data/edx_genres_ratings_micro.png)
 
-This is just the top reviewed movies, but what about movies with less than 50,000 reviews? There are `r edx_distinct_genre_combos` genres, which means I can't display the genre names on the x axis. Figure 5 shows the full genre results (supressing genre names to fit the axis) and it's obvious there's a strong genres effect, but some genres have a wide confidence interval, which is something I'll come back to in the 'Discussion and conclusions' section.
+This is just the top reviewed movies, but what about movies with less than 50,000 reviews? There are `r edx_distinct_genre_combos` genres, which means I can't display the genre names on the x axis. Figure 5 shows the full genre results (supressing genre names to fit the axis) and it's obvious there's a strong genres effect, but some genres have a wide confidence interval, which is something I'll come back to in the 'Conclusion' section.
 
 ![Ratings histogram - full genres set](data/edx_genres_ratings_macro.png)
 
-The movie release year is another possible feature. I extracted release year from the title and plotted the mean rating by year (with 95% confidence interval) below (Figure 6). Ratings are dependent on release year, which is very clear after about 1970. Prior to 1970, the pattern is less obvious and I'll come back to this point in the 'Discussion and conclusion'. For now, I'll add movie release year as another model feature.
+The movie release year is another possible feature. I extracted release year from the title and plotted the mean rating by year (with 95% confidence interval) below (Figure 6). Ratings are dependent on release year, which is very clear after about 1970. Prior to 1970, the pattern is less obvious and I'll come back to this point in the 'Conclusion'. For now, I'll add movie release year as another model feature.
 
 ![Ratings mean and confidence interval by movie release year](data/edx_ratings_release_year.png)
 
@@ -183,13 +185,11 @@ Bringing all my results together, my analysis has suggested the following model 
 
 My analysis also suggests that review timestamp, on its own, will not explain much ratings variation.
 
-# Machine learning
-
-## Model building and training - theory
+## Model approach
 
 Investigating appropriate modeling approaches takes time. With a large data set and limited computational resources (no cloud cluster for example), I need to select a relatively straightforward model and work to reduce the computation time. I therefore chose a linear model and took advantage of some computational short-cuts.
 
-Given my four features, my linear prediction model is:
+Given my five features, my linear prediction model is:
 
 \[
 Y_{u,i} = \mu + b_i + b_u + \sum_{k=1}^K{x^k_{u,i} \beta_k \ + f(rr_{u,i}) +  f(ry_{u,i})+ \epsilon_{u,i}}
@@ -201,7 +201,7 @@ where:
 
 * $\mu$ is the mean rating for all movies and all users.
 
-* $\epsilon_{u,i}$ is the error (assuming a center of zero). I'll come back to this in the discussion.
+* $\epsilon_{u,i}$ is the error (assuming a mean of zero). I'll come back to this in the "Conclusion" section.
 
 * $b_i$ is the mean rating for movie i.
 
@@ -213,7 +213,7 @@ where:
 
 * $f(ry_{u,i})$ - where $f$ is a smooth function of $ry_{u,i}$. This represents the mean rating for the release year feature. I will label this term $b_{ry}$. (+)
 
-(Items labeled (+) are not in the course work.)
+(Items labeled (+) are not in the course work and are novel for this project.)
 
 Using linear modeling for a data set this large is computationally expensive, there is however a a shortcut I can take. I can write the estimate of $b_i$ as: 
 
@@ -247,7 +247,9 @@ I'll use the loss function RMSE as my metric of success. RMSE is defined by the 
 
 If this approach is valid, we would expect to see the RMSE decrease as we build the model up from its components parts.
 
-## Modeling results
+# Results
+
+## Training results
 
 I modeled the data in six stages using the train data subset:
 
@@ -273,9 +275,13 @@ model_scores %>%
   knitr::kable()
 ```
 
-As expected, adding more features decreases RMSE, taking me below the course target of `r rmse_target` However, I may have overfitted the model. To avoid overfitting, I need to regularize my model prior to the final analysis.
+As expected, adding more features decreases RMSE, taking me below the course target of `r rmse_target`.
 
-# Regularization
+My model performance is problematic; the results show a decreasing effect on RMSE of adding more features. The first two features reduced the RMSE by 11% and 9%, then adding more features reduced the improvement by less than 1%. As each feature requires more computational time, this suggests it could become too computationally expensive to reduce the RMSE beyond some point. I will comment more on this in the 'Conclusion' section.
+
+To avoid overfitting, I need to regularize my model prior to the final analysis.
+
+## Regularization
 
 Regularization means choosing a penalty term to constrain effect size variability. My penalty term is $\lambda$ and I select it by minimizing this function using cross validation:
 
@@ -325,19 +331,19 @@ rmses_regularization <- sapply(lambdas, function(lambda) {
 })
 ```
 
-Figure 9 is a plot of RMSE vs lambda. The minimal lambda from the chart is `r lambda`.
+Figure 9 is a plot of RMSE vs. lambda. The minimal lambda from the chart is `r lambda`.
 
 ![Regularization - minimizing RMSE](data/regularization_chart.png)
 
-# Final results
+## Final results
 
-The final stage is using the entire edx data to train the model, use the lambda value previously obtained, and use the validation (holdout) data to calculate the final RMSE. 
+The final stage is using the entire edx data to train the model, using the lambda value previously obtained, and using the validation (holdout) data to calculate the final RMSE. 
 
 The final RMSE value I obtain is `r rmse_final`, which is less than the course target of `r rmse_target`.
 
 A closer look at the final rating predictions shows there are ratings <0.5 and >5, which are below and above the range of ratings I found earlier. I can 'clip' ratings to a minimum of 0.5 and a maximum of 5. Unsurprisingly, clipping reduces the RMSE still further to `r rmse_clipped`.
 
-# Discussion and conclusions
+# Conclusion
 
 Although the final results are better than the course target, more work could reduce the RMSE further.
 
@@ -347,9 +353,17 @@ When modeling genres, I considered *all* genres for a movie. But there may be sp
 
 The release year chart (Figure 6) showed little variation before about 1970. Because of the conditional logic, a random forest approach might work well.
 
-My linear predictive model had a 'error noise' term $\epsilon$ with a mean of zero. This might not be the case here; there may be a bias in the noise and of course there are other (non-normal) error models (see for example [Honda]). It might be worth considering error models that are biased in some way.
+My linear predictive model had a 'error noise' term $\epsilon$ with a mean of zero. But it might not be the case that this is an appropriate error model; there may be a bias in the noise and of course there are other (non-normal) error models (see for example [Honda]). It might be worth considering error models that have other properties.
 
-Although an ensemble model is attractive, in practice the computational burden may be too high for very large datasets. More generally, for a large-scale system, the computational cost must be borne in mind, which suggests we should favor computational cheaper algorithms as the way forward.
+The first two features significantly reduced RMSE, but adding more features had a marginal effect on performance. There could be several reasons for this:
+
+* The MovieLens data has insufficient structure and too much randomness to reduce the RMSE further. The Netflix results suggest further improvement is possible, but it may be there's an irreducible floor for RMSE results.
+
+* A linear model might not be the best approach for further RMSE reduction. It may well be that the underlying system is highly non-linear for example.
+
+* I may have missed key features. The underlying MovieLens data set has more features than the data set I used for this work. It's possible that there's something in this additional data, or the existing data, that would provide better features.
+
+One way forward is to build an ensemble model, combining different modeling approaches. Although an ensemble model is attractive, in practice the computational burden may be too high for very large data sets. More generally, for a large-scale system, the computational cost must be borne in mind, which suggests we should favor computational cheaper algorithms as the way forward.
 
 # References
 
@@ -357,8 +371,7 @@ Although an ensemble model is attractive, in practice the computational burden m
 
 [Gomez-Uribe] Carlos A. Gomez-Uribe and Neil Hunt. 2016. The Netflix Recommender System: Algorithms, Business Value, and Innovation. ACM Trans. Manage. Inf. Syst. 6, 4, Article 13 (January 2016)
 
-[Honda] Testing the Error Components Model with Non-Normal Disturbances
-Yuzo Honda, The Review of Economic Studies, Volume 52, Issue 4, October 1985, Pages 681–690
+[Honda] Testing the Error Components Model with Non-Normal Disturbances, Yuzo Honda, The Review of Economic Studies, Volume 52, Issue 4, October 1985, Pages 681–690
 
 [Jacobson] Kurt Jacobson, Vidhya Murali, Edward Newett, Brian Whitman, and Romain Yon. 2016. Music Personalization at Spotify. In Proceedings of the 10th ACM Conference on Recommender Systems (RecSys '16). Association for Computing Machinery, New York, NY, USA, 373
 
