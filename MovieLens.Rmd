@@ -27,7 +27,7 @@ load(file="data/movielens_evaluation.rda")
 # Executive summary
 
 I have submitted this report as part of the requirements for the HarvardX 
-PH125.9X Capstone course. It explains how I built a recommender system to
+PH125.9X Capstone course (Spring 2021). It explains how I built a recommender system to
 predict the ratings users gave to movies in the MovieLens data set.
 
 The goal of the project was an RMSE (root mean square error) of less than 
@@ -41,14 +41,14 @@ modeling method and considered the following features:
 
 * User effects
 
-* Genre effects
+* Genre effects (+)
 
-* Movie release year effects
+* Movie release year effects (+)
 
-* Duration between movie release year and movie review year
+* Duration between movie release year and movie review year (+)
 
 I also considered review date but rejected it as a feature because 
-it offered too little predictive power. To avoid overfitting, I used regularization.
+it offered too little predictive power. To avoid overfitting, I used regularization. The features marked (+) are not covered in the course materials and are novel.
 
 # Introduction
 
@@ -63,7 +63,7 @@ dedicated to them ([ACM Conference Series on Recommender Systems ](https://recsy
 
 ## The project
 
-The goal of this project was to build a recommender system based on a subset of the MovieLens movie review data. The recommender systems was to predict users' ratings of movies based on features in the data, for example, movie IDs, user IDs, genres, review times etc.
+The aim of this project was to build a recommender system based on a subset of the MovieLens movie review data. The goal of the recommender systems was to predict users' ratings of movies based on features in the data, for example, movie IDs, user IDs, genres, review times etc.
 
 The MovieLens data was collected as part of the social computing research work at the [University of Minnesota](https://grouplens.org/) and is available from the [movielens site](https://grouplens.org/datasets/movielens/). The data contains numeric reviews for movies by reviewer and has other fields such as the movie title, movie genre, and review timestamp. 
 
@@ -85,7 +85,7 @@ As required by the project instructions, this project uses the 10 million review
 
 The MovieLens data I used for this project consists of 10 million reviews. I found no missing (NA) fields. After initial cleaning and formatting, I partitioned this data into two groups using randomization (with a seed of 1):
 
-* edx - 90% of the data. This data was used for training and regularization. All of the results in the 'Exploratory data analysis', 'Model building and training', and 'Regularization' sections of this report use this data *only*. 
+* edx - 90% of the data. This data was used for training and regularization. *All* of the results in the 'Exploratory data analysis', 'Model building and training', and 'Regularization' sections of this report use this data *only*. 
 
 * validation - 10% of the data. This is a holdout data set and was *only* used for the final model evaluation. The only section in this report that uses this data is the 'Final results' section.
 
@@ -99,7 +99,7 @@ This process will result in some users and movies appearing in the validation se
 
 ## Exploratory data analysis
 
-The edx data is a random subset of the full data set, with some movie and user data added back. This means exploratory analysis on the edx data set will be representative of the data set as a whole.
+The edx data is a random subset of the full data set, which means exploratory analysis on the edx data set will be representative of the data set as a whole.
 
 A view of the head of the edx data frame shows the following fields:
 
@@ -109,7 +109,7 @@ edx_original_head %>%
   knitr::kable()
 ```
 
-Note the movie release year is coded into the title and is always the last part of the title. The timestamp field is the UNIX-formatted timestamp when the user submitted their movie review. The genres field contains multiple values separated by a '|' character. Although there are six fields in the data set, the fact the movie title includes the release year suggests I should create a seventh field by extracting the release year from the movie title.
+Note the movie release year is coded into the title and is always the last part of the title. The timestamp field is the UNIX-formatted timestamp when the user submitted their movie review. The genres field contains multiple values separated by a '|' character. Although there are six fields in the data set, the fact the movie title includes the release year suggests I should create a seventh field by extracting the release year.
 
 The movie ratings are the outcomes I want to predict, so I'll explore ratings first. Here are the sorted unique ratings: 
 
@@ -125,7 +125,7 @@ edx_summary %>%
   knitr::kable()
 ```
 
-The summary shows there are a large number of users, movies, and ratings. This suggests the modeling computational burden will be high. The high average number of ratings per user and ratings per movie indicates I should look closely at the underlying distributions, there may be some structure relevant to modeling.
+The summary shows there are a large number of users, movies, and ratings. This suggests the modeling computational burden will be high. The high average number of ratings per user and ratings per movie indicates I should look closely at the underlying distributions because there may be some structure relevant to modeling.
 
 The most obvious distribution is the number of reviews by rating, shown in Figure 1 (below). The quantization and the upper and lower bounds are obvious, but it's also obvious that the distribution is *not* uniform, which suggests there are underlying factors that affect ratings. Note  the most common rating (mode) is 4 and that integer ratings are more common than half scores. I'll return to this topic in the 'Discussion and conclusions' section.
 
@@ -135,7 +135,7 @@ I show distribution of mean ratings by movie in Figure 2. This suggests a very s
 
 ![Movie ratings histogram](data/edx_movies_histogram.png)
 
-Figure 3 plots the user count vs mean rating. Again, there's a very strong user effect on rating and as a result, I need to include this feature in my model. Note that it's an approximately normal distribution and its shape is different from the movie effect, suggesting movie and user effects have different dynamics.
+Figure 3 plots the user count vs mean rating. Again, there's a very strong user effect on rating and as a result, I need to include it in my model. Note that it's an approximately normal distribution and its shape is different from the movie effect, suggesting movie and user effects have different dynamics.
 
 ![User ratings histogram](data/edx_users_histogram.png)
 
@@ -149,7 +149,7 @@ In Figure 4, I've plotted the mean rating and 95% confidence interval for all ge
 
 ![Genres ratings histogram - 50,000 ratings and more](data/edx_genres_ratings_micro.png)
 
-This is just the top reviewed movies, but what about movies with less than 50,000 reviews? There are `r edx_distinct_genre_combos` genres, which means I can't display the genre names on the axis. As is obvious from Figure 5 that shows the full data set, there's a strong genres effect, but some genres have a wide confidence interval, which is something I'll come back to in the 'Discussion and conclusions' section.
+This is just the top reviewed movies, but what about movies with less than 50,000 reviews? There are `r edx_distinct_genre_combos` genres, which means I can't display the genre names on the x axis. Figure 5 shows the full genre results (supressing genre names to fit the axis) and it's obvious there's a strong genres effect, but some genres have a wide confidence interval, which is something I'll come back to in the 'Discussion and conclusions' section.
 
 ![Ratings histogram - full genres set](data/edx_genres_ratings_macro.png)
 
@@ -161,7 +161,7 @@ The final field in the data set is the review timestamp. To make timestamp data 
 
 ![Ratings mean and confidence interval by review week](data/edx_ratings_review_week.png)
 
-Although the timestamp of the review showed little variation, it's possible that the combination of release year and review time may be important. It's possible that older movies get better reviews because people may view them based on their pre-existng reputation. I calculated a feature called review_release which is $(year \ of \ review) - (year \ of \ movie \ release)$ and plotted mean rating against review_release (Figure 8).
+Although the timestamp of the review showed little variation, it's possible that the combination of release year *and* review time may be important. For example, older movies might get better reviews today because people may view them based on their pre-existing reputation. I calculated a feature called review_release which is $(year \ of \ review) - (year \ of \ movie \ release)$ and plotted mean rating against review_release (Figure 8).
 
 ![Ratings mean and confidence interval by release review](data/edx_ratings_review_release.png)
 
@@ -169,7 +169,7 @@ Note that there are a few cases where release_review (the year difference) is ne
 
 The chart shows that, as expected, older movies have better reviews. I will include this feature in my model.
 
-My analysis has suggested the following model features:
+Bringing all my results together, my analysis has suggested the following model features:
 
 * movie
 
@@ -182,6 +182,8 @@ My analysis has suggested the following model features:
 * release year
 
 My analysis also suggests that review timestamp, on its own, will not explain much ratings variation.
+
+# Machine learning
 
 ## Model building and training - theory
 
@@ -205,17 +207,19 @@ where:
 
 * $b_u$ is the mean rating for user u.
 
-* $\sum_{k=1}^K{x^k_{u,i} \beta_k}$ where $x_{u,i}^k = 1$ if $g_{u,i}$ is genre $k$. This represents the mean genre rating for genre $k$. For brevity, I will label this term $b_g$.
+* $\sum_{k=1}^K{x^k_{u,i} \beta_k}$ where $x_{u,i}^k = 1$ if $g_{u,i}$ is genre $k$. This represents the mean genre rating for genre $k$. For brevity, I will label this term $b_g$. (+)
 
-* $f(rr_{u,i})$ - where $f$ is a smooth function of $rr_{u,i}$. This represents the mean rating for my feature release review. Again for brevity, I will label this term $b_{rr}$.
+* $f(rr_{u,i})$ - where $f$ is a smooth function of $rr_{u,i}$. This represents the mean rating for my feature release review. Again for brevity, I will label this term $b_{rr}$. (+)
 
-* $f(ry_{u,i})$ - where $f$ is a smooth function of $ry_{u,i}$. This represents the mean rating for the release year feature. I will label this term $b_{ry}$.
+* $f(ry_{u,i})$ - where $f$ is a smooth function of $ry_{u,i}$. This represents the mean rating for the release year feature. I will label this term $b_{ry}$. (+)
+
+(Items labeled (+) are not in the course work.)
 
 Using linear modeling for a data set this large is computationally expensive, there is however a a shortcut I can take. I can write the estimate of $b_i$ as: 
 
 \[\hat b_i = \frac{1}{N}\sum^N_{i=1} {Y_{u,i} - \hat \mu}\]
 
-this is cheaper and easier to compute than using linear modeling in the caret package. But it's not just $b_i$ I can calculate in this way, I can similarly calculate the other terms, for example:
+which is cheaper and easier to compute than using linear modeling in the caret package. But it's not just $b_i$ I can calculate in this way, I can similarly calculate the other terms, for example:
 
 \[\hat b_u = \frac{1}{N}\sum^N_{i=1} {Y_{u,i} - \hat \mu - \hat b_i}\]
 
@@ -243,7 +247,7 @@ I'll use the loss function RMSE as my metric of success. RMSE is defined by the 
 
 If this approach is valid, we would expect to see the RMSE decrease as we build the model up from its components parts.
 
-# Modeling results
+## Modeling results
 
 I modeled the data in six stages using the train data subset:
 
@@ -295,7 +299,7 @@ rmses_regularization <- sapply(lambdas, function(lambda) {
   
   mu <- mean(train$rating)
   
-  ... Code removed
+  # ... Code removed for clarity ...
   
   # Release year
   b_ry <- train %>% 

@@ -69,9 +69,11 @@ RMSE <- function(true_ratings, predicted_ratings){
 # ===
 # Extract Transform Load - data cleansing and data preparation.
 
+# Get file from grouplens site
 dl <- tempfile()
 download.file("http://files.grouplens.org/datasets/movielens/ml-10m.zip", dl)
 
+# Formatting data
 ratings <- fread(
   text = gsub("::", "\t", readLines(unzip(dl, "ml-10M100K/ratings.dat"))),
   col.names = c("userId", "movieId", "rating", "timestamp"))
@@ -88,6 +90,8 @@ movielens <- left_join(ratings, movies, by = "movieId")
 
 # Add columns needed for exploration and analysis
 # release_year is the year the movie was released
+# review_week was the week the movie as reviewed
+# release_review is the number of years between release and review
 movielens <- movielens %>% mutate(
   release_year = as.numeric(
     str_extract(str_extract(title, "[/(]\\d{4}[/)]$"), regex("\\d{4}"))),
@@ -102,7 +106,7 @@ test_index <- createDataPartition(
 edx <- movielens[-test_index,]
 temp <- movielens[test_index,]
 
-# Make sure userId and movieId in validation set are also in edx set
+# Make sure all userIds and movieIds in validation set are also in edx set
 validation <- temp %>% 
   semi_join(edx, by = "movieId") %>%
   semi_join(edx, by = "userId")
@@ -116,7 +120,7 @@ rm(dl, ratings, movies, test_index, temp, movielens, removed)
 
 # Create train and test set for machine learning
 # ----------------------------------------------
-# Note these are the sets used for modeling and regularization. the validation
+# Note these are the sets used for modeling and regularization. The validation
 # set is only used for final validation.
 set.seed(1, sample.kind="Rounding") 
 test_index <- createDataPartition(
@@ -141,14 +145,14 @@ rm(test_index, temp, removed)
 # Stop the script execution if basic quality checks not passed.
 
 # Check edx loaded correctly. Basic checks - if Drama numbers correct,
-# other genres should be too.
+# other genres should be too. Drama chosen at random as an example.
 if ((edx %>% select(movieId) %>% n_distinct() != 10677) 
     | (edx %>% select(userId) %>% n_distinct() != 69878)
     | (edx %>% filter(str_detect(genres, 'Drama')) %>% 
        select(rating) %>% nrow() != 3910127)) {
   stop(message("edx data not correctly loaded. Stopping execution."))
 }
-# Check validation loaded correctly.
+# Check validation loaded correctly. Check counts are correct.
 if ((validation %>% select(movieId) %>% n_distinct() != 9809) 
     | (validation %>% select(userId) %>% n_distinct() != 68534)
     | (validation %>% filter(str_detect(genres, 'Drama')) %>% 
@@ -187,8 +191,7 @@ print(edx_original_head)
 edx_unique_ratings <- sort(unique(edx$rating))
 print(edx_unique_ratings)
 # Observations:
-# Ratings vary from 0.5 to 5 in steps of 0.5. This means that boxplots using
-# ratings will be difficult to interpret and may hide trends.
+# Ratings vary from 0.5 to 5 in steps of 0.5. 
 
 edx_summary <-edx %>% summarize(no_users = n_distinct(userId), 
     no_movies = n_distinct(movieId), 
@@ -216,7 +219,7 @@ print(edx_rating_histogram)
 # 2. Most common rating is 4
 # 3. Distribution is not uniform - significant difference in frequency
 
-# Mean ratings by movie
+# Mean ratings by movie histogram
 edx_movies_histogram <- edx %>% 
   group_by(movieId) %>%
   summarize(mean_rating=mean(rating), .groups='keep') %>%
@@ -231,7 +234,7 @@ print(edx_movies_histogram)
 # 1. Strong movie effect
 # 2. Distribution is left-skewed
 
-# Mean ratings by user
+# Mean ratings by user histogram
 edx_users_histogram <- edx %>% 
   group_by(userId) %>%
   summarize(mean_rating=mean(rating), .groups='keep') %>%
@@ -257,7 +260,7 @@ edx_distinct_genre_combos <- n_distinct(edx$genres)
 print(edx_distinct_genre_combos)
 
 # Mean ratings by genre. Error bar is 1.96*se: the 95% confidence interval.
-# Show all genres with mnore than 50,000 ratings
+# Show all genres with more than 50,000 ratings
 edx_genres_ratings_micro <- edx %>% 
   group_by(genres) %>% 
   summarize(n_ratings = n(),
@@ -324,7 +327,7 @@ print(edx_ratings_release_year)
 # 1. Not as big an effect as user, movie, and genre, but none the less,
 #    there is an effect.
 # 2. Range is about 3.3 to 4.05
-# 4. Effect becomes more pronounced after about 1970.
+# 3. Effect becomes more pronounced after about 1970.
 
 # Mean rating by review week
 edx_ratings_review_week <- edx %>% 
@@ -454,7 +457,7 @@ predicted_ratings <- test %>%
 rmse_user <- RMSE(test$rating, predicted_ratings)
 model_scores <- rbind(model_scores, c("User effects", rmse_user))
 
-# Adding genres
+# Adding genres - not in course
 b_g <- train %>% 
   left_join(b_i, by='movieId') %>%
   left_join(b_u, by='userId') %>%
@@ -470,7 +473,7 @@ predicted_ratings <- test %>%
 rmse_genres = RMSE(test$rating, predicted_ratings)
 model_scores <- rbind(model_scores, c("Genres", rmse_genres))
 
-# Add release review effect
+# Add release review effect - not in course
 b_rr <- train %>% 
   left_join(b_i, by='movieId') %>%
   left_join(b_u, by='userId') %>%
@@ -488,7 +491,7 @@ predicted_ratings <- test %>%
 rmse_releasereview = RMSE(test$rating, predicted_ratings)
 model_scores<-rbind(model_scores, c("Release review", rmse_releasereview))
 
-# Add release year
+# Add release year - not in course
 b_ry <- train %>% 
   left_join(b_i, by='movieId') %>%
   left_join(b_u, by='userId') %>%
@@ -610,7 +613,7 @@ print("===================")
 # Training on on whole edx data set
 # ---------------------------------
 # This is the last step before final evaluation. I'm training my model on the
-# entire edx data set using all the existing features developed using test and
+# edx data set using all the existing features developed using test and
 # train.
 mu <- mean(edx$rating)
 
@@ -697,4 +700,3 @@ save(rmse_target, rmse_final, rmse_clipped, script_duration,
      file=file.path(data_folder, "movielens_evaluation.rda"))
 
 print("End of script")
-
